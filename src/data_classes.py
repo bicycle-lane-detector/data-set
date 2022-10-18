@@ -9,6 +9,7 @@ class Node:
 @dataclass(frozen=True, init=True)
 class CycleWay:
     nodes:list
+    MASK_VALUE = 255
 
 '''Street is a regular street that has cycle lanes or tracks on the side'''
 @dataclass(frozen=True, init=True)
@@ -17,3 +18,4 @@ class Street:
     n_car_lanes:int
     bike_right:bool
     bike_left:bool
+    MASK_VALUE = 255
