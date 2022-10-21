@@ -7,6 +7,7 @@ import os
 from tqdm import tqdm
 import glob
 from typing import Union
+from data_preparation import fetchData
 
 '''
 cycling lane width:13px, 13px, 12 px, 10px, 9.5px, 10.5 px, 13 px, 10px, 13px, 14px, 11px, 11 px, 14px, 14 px, 11px, 10px ~ avg 11.8125
@@ -25,6 +26,12 @@ class GeoTif:
     name:str
     _coordTransform:any 
     _geo_transform_inv:any
+
+    def print(self):
+        print(self.name)
+        print(self._coordTransform)
+        print("inverse:")
+        print(self._geo_transform_inv)
 
     def __init__(self, path:str):
         self.name = os.path.basename(path)
@@ -75,8 +82,7 @@ def extractLanes(street: dc.Street, v_list:list) -> tuple[list, list]:
         v_x, v_y = v
         orthogonal_left = np.array([v_y, -v_x]) # vector turned by 90° clockwise in "upside-down" 2D
         orthogonal_left = orthogonal_left / np.sqrt(np.sum(orthogonal_left**2)) # make unit vector
-        orthogonal_left *= street.n_car_lanes / 2 * DISTANCE_FROM_CENTER_LINE_PER_CAR_LANE 
-        + MASK_LINE_WIDTH / 2 # extend to desired length
+        orthogonal_left *= street.n_car_lanes / 2 * DISTANCE_FROM_CENTER_LINE_PER_CAR_LANE + MASK_LINE_WIDTH / 2 # extend to desired length
 
         orthogonal_right = -orthogonal_left # vector turned by 90° counter-clockwise in "upside-down" 2D and extended to deisred length
 
@@ -89,12 +95,14 @@ def extractLanes(street: dc.Street, v_list:list) -> tuple[list, list]:
 
 def draw(canvas:ImageDraw.ImageDraw, road:Union[dc.CycleWay,dc.Street], vectors:list[tuple[int, int]]) -> None:
     width = round(MASK_LINE_WIDTH)
+    #fill = (255,0,0,128)
+    fill = 255
     if type(road) is dc.CycleWay:
-        canvas.line(vectors, fill=road.MASK_VALUE, width=width)
+        canvas.line(vectors, fill=fill, width=width)
     if type(road) is dc.Street:
         left, right = extractLanes(road, vectors)
-        canvas.line(left, fill=road.MASK_VALUE, width=width)
-        canvas.line(right, fill=road.MASK_VALUE, width=width)
+        canvas.line(left, fill=fill, width=width)
+        canvas.line(right, fill=fill, width=width)
 
 
 if __name__ == "__main__":
@@ -105,9 +113,8 @@ if __name__ == "__main__":
 
     print("Found", len(tifs), "GeoTifs.")
 
-    # load OSM data 
-    osm_data = [dc.Street([dc.Node(52.456301, 9.885560), dc.Node(52.442347, 9.874404), dc.Node(52.437119, 9.853202)], 6, True, True), 
-    dc.CycleWay([dc.Node(52.456301, 9.885560), dc.Node(52.442347, 9.874404), dc.Node(52.437119, 9.853202)])]
+    osm_data = fetchData()
+
     print("Loaded", len(osm_data), "individual road segments with, in total,", sum(len(i.nodes) for i in osm_data),"data points.")
 
     print("Creating masks by applying road segments...")
@@ -116,7 +123,7 @@ if __name__ == "__main__":
         canvas = ImageDraw.Draw(mask)
 
         for road in osm_data:
-            vectors = [tif.toPixelCoord(node.lat, node.lon) for node in road.nodes]
+            vectors = [tif.toPixelCoord(node.lat, node.lon) for node in road.nodes] 
             draw(canvas, road, vectors)
 
         mask.save(os.path.join(path, tif.name[:-3] + "png"))

@@ -4,9 +4,9 @@ import data_classes as dc
 class Dataprep:
     cycleways=[]
     streets=[]
-    nodes=[]
 
-    def addstreet(self, nodes:list, lanes:int):
+    def addstreet(self, feature:any, nodes:list, lanes:int):
+        lanes = int(lanes)
         bike_right= 'cycleway:right' in feature['properties']
         bike_left= 'cycleway:left' in feature['properties'] 
 
@@ -16,33 +16,37 @@ class Dataprep:
 
         self.streets.append(dc.Street(nodes, lanes, bike_right, bike_left))
 
-dataprep=Dataprep()
+def fetchData() -> list: 
+    dataprep=Dataprep()
 
-#read export file as geojson
-with open('export.geojson', encoding='utf-8') as f:
-    gf = geojson.load(f)
+    #read export file as geojson
+    with open('export.geojson', encoding='utf-8') as f:
+        gf = geojson.load(f)
 
-#iterate over features and add to corresponding class
-for feature in gf['features']:
-    features = feature['properties']
+    #iterate over features and add to corresponding class
+    for feature in gf['features']:
 
-    #add all nodes of feature
-    dataprep.nodes.clear()
-    for coordinate in feature['geometry']['coordinates']:
+        #add all nodes of feature
+        nodes = []
+        for coordinate in feature['geometry']['coordinates']:
 
-        #PYTHON AUTOMATICALLY ROUNDES THE COORDINATES
-        lon = coordinate[0]
-        lat = coordinate[1]
-        dataprep.nodes.append(dc.Node(lat, lon))
+            #PYTHON AUTOMATICALLY ROUNDES THE COORDINATES
+            lon = coordinate[0]
+            lat = coordinate[1]
+            nodes.append(dc.Node(lat, lon))
 
-    #decision if street or cycleway
-    if 'lanes' in feature['properties']:
-        lanes=feature['properties']['lanes']
-        dataprep.addstreet(dataprep.nodes, lanes)
+        #decision if street or cycleway
+        if 'lanes' in feature['properties']:
+            lanes=feature['properties']['lanes']
+            dataprep.addstreet(feature, nodes, lanes)
 
-    elif 'lane_markings' in feature['properties']:
-        lanes=0
-        dataprep.addstreet(dataprep.nodes, lanes)
+        elif 'lane_markings' in feature['properties']:
+            lanes=2
+            dataprep.addstreet(feature, nodes, lanes)
 
-    else:
-        dataprep.cycleways.append(dc.CycleWay(dataprep.nodes))
+        else:
+            dataprep.cycleways.append(dc.CycleWay(nodes))
+    
+    ret = dataprep.cycleways
+    ret.extend(dataprep.streets)
+    return ret
