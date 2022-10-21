@@ -8,8 +8,14 @@ from tqdm import tqdm
 import glob
 from typing import Union
 
-DISTANCE_FROM_CENTER_LINE_PER_CAR_LANE = 20
-MASK_LINE_WIDTH = 10
+'''
+cycling lane width:13px, 13px, 12 px, 10px, 9.5px, 10.5 px, 13 px, 10px, 13px, 14px, 11px, 11 px, 14px, 14 px, 11px, 10px ~ avg 11.8125
+car lane width: 15 px, 18px, 17px, 21px, 17px, 15, 17, 16px, 13 px, 23px, 16px, 17px, 22px, 22px, 18px, 15px ~ avg 17.625
+but beware tram tracks
+'''
+
+DISTANCE_FROM_CENTER_LINE_PER_CAR_LANE = 17.625
+MASK_LINE_WIDTH = 11.8125
 
 IMG_WIDTH = IMG_HEIGHT = 10_000
 
@@ -69,7 +75,8 @@ def extractLanes(street: dc.Street, v_list:list) -> tuple[list, list]:
         v_x, v_y = v
         orthogonal_left = np.array([v_y, -v_x]) # vector turned by 90° clockwise in "upside-down" 2D
         orthogonal_left = orthogonal_left / np.sqrt(np.sum(orthogonal_left**2)) # make unit vector
-        orthogonal_left *= street.n_car_lanes / 2 * DISTANCE_FROM_CENTER_LINE_PER_CAR_LANE # extend to desired length
+        orthogonal_left *= street.n_car_lanes / 2 * DISTANCE_FROM_CENTER_LINE_PER_CAR_LANE 
+        + MASK_LINE_WIDTH / 2 # extend to desired length
 
         orthogonal_right = -orthogonal_left # vector turned by 90° counter-clockwise in "upside-down" 2D and extended to deisred length
 
@@ -81,12 +88,13 @@ def extractLanes(street: dc.Street, v_list:list) -> tuple[list, list]:
     return left_track, right_track
 
 def draw(canvas:ImageDraw.ImageDraw, road:Union[dc.CycleWay,dc.Street], vectors:list[tuple[int, int]]) -> None:
+    width = round(MASK_LINE_WIDTH)
     if type(road) is dc.CycleWay:
-        canvas.line(vectors, fill=road.MASK_VALUE, width=MASK_LINE_WIDTH)
+        canvas.line(vectors, fill=road.MASK_VALUE, width=width)
     if type(road) is dc.Street:
         left, right = extractLanes(road, vectors)
-        canvas.line(left, fill=road.MASK_VALUE, width=MASK_LINE_WIDTH)
-        canvas.line(right, fill=road.MASK_VALUE, width=MASK_LINE_WIDTH)
+        canvas.line(left, fill=road.MASK_VALUE, width=width)
+        canvas.line(right, fill=road.MASK_VALUE, width=width)
 
 
 if __name__ == "__main__":
@@ -100,7 +108,7 @@ if __name__ == "__main__":
     # load OSM data 
     osm_data = [dc.Street([dc.Node(52.456301, 9.885560), dc.Node(52.442347, 9.874404), dc.Node(52.437119, 9.853202)], 6, True, True), 
     dc.CycleWay([dc.Node(52.456301, 9.885560), dc.Node(52.442347, 9.874404), dc.Node(52.437119, 9.853202)])]
-    print("Loaded", len(osm_data), "individual road segments with", sum(len(i.nodes) for i in osm_data),"data points in total.")
+    print("Loaded", len(osm_data), "individual road segments with, in total,", sum(len(i.nodes) for i in osm_data),"data points.")
 
     print("Creating masks by applying road segments...")
     for tif in tqdm(tifs, total=len(tifs)):
