@@ -18,6 +18,8 @@ but beware tram tracks
 DISTANCE_FROM_CENTER_LINE_PER_CAR_LANE = 17.625
 MASK_LINE_WIDTH = 11.8125
 
+OVERLAY_MASK = False
+
 IMG_WIDTH = IMG_HEIGHT = 10_000
 
 class GeoTif:
@@ -95,14 +97,23 @@ def extractLanes(street: dc.Street, v_list:list) -> tuple[list, list]:
 
 def draw(canvas:ImageDraw.ImageDraw, road:Union[dc.CycleWay,dc.Street], vectors:list[tuple[int, int]]) -> None:
     width = round(MASK_LINE_WIDTH)
-    #fill = (255,0,0,128)
-    fill = 255
+    if OVERLAY_MASK:
+        fill = (255,0,0,100)
+    else:
+        fill = 255
     if type(road) is dc.CycleWay:
         canvas.line(vectors, fill=fill, width=width)
     if type(road) is dc.Street:
         left, right = extractLanes(road, vectors)
         canvas.line(left, fill=fill, width=width)
         canvas.line(right, fill=fill, width=width)
+
+
+def createImage(path: str) -> Image:
+    if not OVERLAY_MASK:
+        return Image.new('L', (IMG_WIDTH, IMG_HEIGHT))
+    else:
+        return Image.open(path)
 
 
 if __name__ == "__main__":
@@ -119,9 +130,9 @@ if __name__ == "__main__":
 
     print("Creating masks by applying road segments...")
     for tif in tqdm(tifs, total=len(tifs)):
-        mask = Image.new('L', (IMG_WIDTH, IMG_HEIGHT))
-        canvas = ImageDraw.Draw(mask)
-
+        mask = createImage(os.path.join(path, tif.name)) 
+        canvas = ImageDraw.Draw(mask, mode="RGBA" if OVERLAY_MASK else mask.mode)
+        
         for road in osm_data:
             vectors = [tif.toPixelCoord(node.lat, node.lon) for node in road.nodes] 
             draw(canvas, road, vectors)
