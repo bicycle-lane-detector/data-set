@@ -6,7 +6,7 @@ class Dataprep:
     streets=[]
 
     def addstreet(self, feature:any, nodes:list, lanes:int):
-        lanes = int(lanes)
+        lanes = int(round(float(lanes)))
         bike_right= 'cycleway:right' in feature['properties']
         bike_left= 'cycleway:left' in feature['properties'] 
 
@@ -16,11 +16,11 @@ class Dataprep:
 
         self.streets.append(dc.Street(nodes, lanes, bike_right, bike_left))
 
-def fetchData() -> list: 
+def fetchData(path) -> list: 
     dataprep=Dataprep()
 
     #read export file as geojson
-    with open('export.geojson', encoding='utf-8') as f:
+    with open(path, encoding='utf-8') as f:
         gf = geojson.load(f)
 
     #iterate over features and add to corresponding class

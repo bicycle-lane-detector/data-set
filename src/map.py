@@ -8,6 +8,7 @@ from tqdm import tqdm
 import glob
 from typing import Union
 from data_preparation import fetchData
+import math
 
 '''
 cycling lane width:13px, 13px, 12 px, 10px, 9.5px, 10.5 px, 13 px, 10px, 13px, 14px, 11px, 11 px, 14px, 14 px, 11px, 10px ~ avg 11.8125
@@ -83,7 +84,8 @@ def extractLanes(street: dc.Street, v_list:list) -> tuple[list, list]:
         v = end - start
         v_x, v_y = v
         orthogonal_left = np.array([v_y, -v_x]) # vector turned by 90° clockwise in "upside-down" 2D
-        orthogonal_left = orthogonal_left / np.sqrt(np.sum(orthogonal_left**2)) # make unit vector
+        div = math.sqrt(np.sum(orthogonal_left**2))
+        orthogonal_left = orthogonal_left / div if div else np.array((0.,0.)) # make unit vector
         orthogonal_left *= street.n_car_lanes / 2 * DISTANCE_FROM_CENTER_LINE_PER_CAR_LANE + MASK_LINE_WIDTH / 2 # extend to desired length
 
         orthogonal_right = -orthogonal_left # vector turned by 90° counter-clockwise in "upside-down" 2D and extended to deisred length
@@ -117,14 +119,15 @@ def createImage(path: str) -> Image:
 
 
 if __name__ == "__main__":
-    path = "D:\Studienarbeit\hannover_alle"
+    path = "D:/Studienarbeit/osnabrueck"
+    geotif = 'osnabrueck.geojson'
 
     path_to_tifs = os.path.join(path, "*.tif")
     tifs = [GeoTif(fname) for fname in glob.glob(path_to_tifs)]
 
     print("Found", len(tifs), "GeoTifs.")
 
-    osm_data = fetchData()
+    osm_data = fetchData(geotif)
 
     print("Loaded", len(osm_data), "individual road segments with, in total,", sum(len(i.nodes) for i in osm_data),"data points.")
 
