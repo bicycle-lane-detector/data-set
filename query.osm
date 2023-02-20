@@ -1,0 +1,29 @@
+/*
+This shows the cycleway and cycleroute network.
+*/
+
+[out:json];
+
+(
+  // get cycle route relations
+  way[highway=cycleway](52.409500, 10.734874, 52.444120,10.824291);
+  
+  
+ way[highway=path][bicycle=designated](52.409500, 10.734874, 52.444120,10.824291);
+ way[highway=track][bicycle=designated](52.409500, 10.734874, 52.444120,10.824291);
+
+  way[cycleway=track](52.409500, 10.734874, 52.444120,10.824291);
+  way[cycleway=lane](52.409500, 10.734874, 52.444120,10.824291);
+  way["cycleway:left"=track](52.409500, 10.734874, 52.444120,10.824291);
+  way["cycleway:right"=track](52.409500, 10.734874, 52.444120,10.824291);
+  way["cycleway:left"=lane](52.409500, 10.734874, 52.444120,10.824291);
+  way["cycleway:right"=lane](52.409500, 10.734874, 52.444120,10.824291);
+  way["cycleway:both"=lane](52.409500, 10.734874, 52.444120,10.824291);
+  way["cycleway:both"=track](52.409500, 10.734874, 52.444120,10.824291);
+
+  way[cycleway=opposite_lane](52.409500, 10.734874, 52.444120,10.824291);
+);
+
+out body;
+>;
+out skel qt;

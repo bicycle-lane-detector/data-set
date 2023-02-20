@@ -119,8 +119,8 @@ def createImage(path: str) -> Image:
 
 
 if __name__ == "__main__":
-    path = "D:/Studienarbeit/osnabrueck"
-    geotif = 'osnabrueck.geojson'
+    path = "D:/Studienarbeit/raw/wolfsburg"
+    geotif = 'wolfsburg.geojson'
 
     path_to_tifs = os.path.join(path, "*.tif")
     tifs = [GeoTif(fname) for fname in glob.glob(path_to_tifs)]
